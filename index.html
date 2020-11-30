@@ -30,16 +30,14 @@
             </div>
             <div class="file-upload-content">
                 <img class="file-upload-image" id="dog-image" src="#" alt="your image" />
-				<div id="label-container"></div>
+                <div id="label-container"></div>
                 <div class="image-title-wrap">
                     <button type="button" onclick="removeUpload()" class="remove-image">
                         Remove <span class="image-title">Uploaded Image</span>
                     </button>
                 </div>
             </div>
-			<div>
-
-			</div>
+            <div></div>
         </div>
         <div id="webcam-container"></div>
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
@@ -59,10 +57,9 @@
                     };
 
                     reader.readAsDataURL(input.files[0]);
-					init().then(()=>{
-						predict();
-					});
-					
+                    init().then(() => {
+                        predict();
+                    });
                 } else {
                     removeUpload();
                 }
@@ -114,14 +111,82 @@
             async function predict() {
                 // predict can take in an image, video or canvas html element
                 var image = document.getElementById('dog-image');
-                const prediction = await model.predict(image,false);
-				prediction.sort((a,b)=>parseFloat(b.probability)-parseFloat(a.probability));
+                const prediction = await model.predict(image, false);
+                prediction.sort((a, b) => parseFloat(b.probability) - parseFloat(a.probability));
                 for (let i = 0; i < maxPredictions; i++) {
                     const classPrediction =
                         prediction[i].className + ': ' + prediction[i].probability.toFixed(2);
                     labelContainer.childNodes[i].innerHTML = classPrediction;
                 }
+                document.getElementById('textToSpeech').value = prediction[0].className;
             }
+        </script>
+        <div class="container" style="text-align: center; width: 300px; margin: 0 auto;">
+            <select name="voiceSelect" id="voiceSelect"></select>
+            <br />
+            <textarea cols="10" rows="4" id="textToSpeech" style="width: 300px;"></textarea>
+            <br />
+            <button type="button" id="play">Play</button>
+            <button type="button" id="stop">Stop</button>
+            <button type="button" id="pause">Pause</button>
+            <button type="button" id="resume">Resume</button>
+        </div>
+        <script>
+            var init2 = function () {
+                if (window.speechSynthesis) {
+                    if ('onvoiceschanged' in speechSynthesis) {
+                        speechSynthesis.onvoiceschanged = setVoices;
+                    } else {
+                        setVoices();
+                    }
+                }
+                let playBtn = document.getElementById('play');
+                let stopBtn = document.getElementById('stop');
+                let pauseBtn = document.getElementById('pause');
+                let resumeBtn = document.getElementById('resume');
+                playBtn.addEventListener('click', play);
+                stopBtn.addEventListener('click', stopPlay);
+                pauseBtn.addEventListener('click', pause);
+                resumeBtn.addEventListener('click', resume);
+            };
+            var play = function () {
+                var self = this;
+                this.disabled = true;
+                let voices = speechSynthesis.getVoices();
+                let speech = new SpeechSynthesisUtterance();
+                let selectedVoice = document.getElementById('voiceSelect');
+                let tts = document.getElementById('textToSpeech');
+                speech.text = tts.value;
+                speech.voice = voices[selectedVoice.value];
+                speechSynthesis.speak(speech);
+                speech.onend = function () {
+                    self.disabled = false;
+                };
+            };
+            var stopPlay = function () {
+                speechSynthesis.cancel();
+                let playBtn = document.getElementById('play');
+                playBtn.disabled = false;
+            };
+            var pause = function () {
+                if (!speechSynthesis.paused) speechSynthesis.pause();
+            };
+            var resume = function () {
+                if (speechSynthesis.paused) speechSynthesis.resume();
+            };
+            var setVoices = function () {
+                let voices = speechSynthesis.getVoices();
+                let voicesSelect = document.getElementById('voiceSelect');
+                for (let index in voices) {
+                    let option = document.createElement('OPTION');
+                    option.value = index;
+                    option.innerHTML = voices[index].name;
+                    voicesSelect.appendChild(option);
+                }
+            };
+            window.onload = function () {
+                init2();
+            };
         </script>
     </body>
     <!--
@@ -132,5 +197,4 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
--->
-</html>
+--></html>
